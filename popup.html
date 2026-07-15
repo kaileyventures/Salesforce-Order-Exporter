@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Orders</title>
+    <link rel="stylesheet" href="popup.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-background">
+        <!-- Decorative glowing orbs -->
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        
+        <div class="container">
+        <header class="header">
+            <div class="header-top" style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                <div class="header-brand" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                    <div class="logo-container">
+                        <div class="logo-icon">SF</div>
+                    </div>
+                    <h1>Order Exporter</h1>
+                    <p class="subtitle">Extract data directly from Salesforce</p>
+                </div>
+                <button id="closeSidebarBtn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 24px; padding: 0 5px; margin-top: -10px; margin-right: -10px;">&times;</button>
+            </div>
+        </header>
+            
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="export">Export</button>
+                <button class="tab-btn" data-tab="status">Status</button>
+                <button class="tab-btn" data-tab="courier">Courier</button>
+            </div>
+
+            <main id="exportTab" class="tab-content active">
+                <div class="form-group">
+                    <label for="lastOrderId">Last Order ID</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M3 15h6"/><path d="M3 18h6"/><path d="M3 12h6"/></svg>
+                        <input type="text" id="lastOrderId" placeholder="e.g. 8950 or ARO-8950" autocomplete="off" />
+                    </div>
+                    <div class="checkbox-wrapper" style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="includeLastOrder" />
+                        <label for="includeLastOrder" style="margin-bottom: 0; font-size: 0.9rem; font-weight: normal; color: var(--text-secondary); cursor: pointer;">Include this order as well</label>
+                    </div>
+                    <div class="helper-text" id="helperText">Example: Last exported order was ARO-8950</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="orderStatus">Target Status</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                        <select id="orderStatus">
+                            <option value="All">All Statuses</option>
+                            <option value="Courier In Progress">Courier In Progress</option>
+                            <option value="Address Verification Pending">Address Verification Pending</option>
+                            <option value="Address Confirmed">Address Confirmed</option>
+                            <option value="Shipping Label Generated">Shipping Label Generated</option>
+                            <option value="Pending Courier Partner">Pending Courier Partner</option>
+                            <option value="Confirmed Courier Partner">Confirmed Courier Partner</option>
+                            <option value="Dispatched">Dispatched</option>
+                            <option value="In Transit">In Transit</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Delivery Failed">Delivery Failed</option>
+                            <option value="Re-Delivery Initiated">Re-Delivery Initiated</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button id="exportBtn" class="primary-btn">
+                    <span class="btn-text">Extract Orders</span>
+                    <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    <div class="loader hidden" id="loader"></div>
+                </button>
+            </main>
+
+            <main id="statusTab" class="tab-content">
+                <div class="form-group">
+                    <label for="bulkOrderIds">Order IDs (One per row)</label>
+                    <textarea id="bulkOrderIds" placeholder="ARO-12345&#10;ARO-12346&#10;ARO-12347" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="bulkTargetStatus">New Status</label>
+                    <div class="input-wrapper">
+                        <select id="bulkTargetStatus">
+                            <option value="">-- Select Status --</option>
+                            <option value="Courier In Progress">Courier In Progress</option>
+                            <option value="Address Verification Pending">Address Verification Pending</option>
+                            <option value="Address Confirmed">Address Confirmed</option>
+                            <option value="Shipping Label Generated">Shipping Label Generated</option>
+                            <option value="Pending Courier Partner">Pending Courier Partner</option>
+                            <option value="Confirmed Courier Partner">Confirmed Courier Partner</option>
+                            <option value="Dispatched">Dispatched</option>
+                            <option value="In Transit">In Transit</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Delivery Failed">Delivery Failed</option>
+                            <option value="Re-Delivery Initiated">Re-Delivery Initiated</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="bulkUpdateStatusBtn" class="primary-btn">
+                    <span class="btn-text">Update Statuses</span>
+                    <div class="loader hidden" id="statusLoader"></div>
+                </button>
+            </main>
+
+            <main id="courierTab" class="tab-content">
+                <div class="form-group">
+                    <label for="bulkCourierData">Courier Data (Tab-separated)</label>
+                    <div class="helper-text" style="margin-bottom: 6px;">Paste from Excel. Columns must include an 'Order ID' or 'Record ID' column. Other valid columns: 'AWB Number', 'Courier Partner', 'Courier Team Remarks', 'Tracking Link'.</div>
+                    <textarea id="bulkCourierData" placeholder="Order ID&#9;AWB Number&#9;Courier Partner&#10;ARO-14445&#9;12345&#9;Delhivery" rows="4"></textarea>
+                </div>
+                <button id="bulkUpdateCourierBtn" class="primary-btn">
+                    <span class="btn-text">Update Courier Info</span>
+                    <div class="loader hidden" id="courierLoader"></div>
+                </button>
+            </main>
+
+            <div id="statusMsg" class="status-message"></div>
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>

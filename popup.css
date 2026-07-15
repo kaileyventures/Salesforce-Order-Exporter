@@ -1,0 +1,394 @@
+:root {
+    --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%);
+    --primary-hover: linear-gradient(135deg, #4338ca 0%, #0284c7 100%);
+    --bg-dark: #0f172a;
+    --card-bg: rgba(30, 41, 59, 0.7);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --input-bg: rgba(15, 23, 42, 0.6);
+    --input-border: rgba(255, 255, 255, 0.15);
+    --input-focus: rgba(56, 189, 248, 0.5);
+    --shadow-strong: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    --border-radius-lg: 16px;
+    --border-radius-md: 12px;
+    --error: #ef4444;
+    --success: #10b981;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-dark);
+    width: 100%;
+    min-height: 100vh;
+    color: var(--text-main);
+    margin: 0;
+    padding: 0;
+}
+
+/* Background Effects */
+.app-background {
+    position: relative;
+    width: 100%;
+    /* Let the content dictate the height, do not use 100vh */
+    display: flex;
+    flex-direction: column;
+    z-index: 1;
+    overflow: hidden; /* This is crucial: it stops the glowing orbs from causing scrollbars! */
+}
+
+.glow-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    z-index: -1;
+    opacity: 0.6;
+    animation: pulse 8s infinite alternate;
+}
+
+.orb-1 {
+    width: 200px;
+    height: 200px;
+    background: #4f46e5;
+    top: -50px;
+    left: -50px;
+}
+
+.orb-2 {
+    width: 250px;
+    height: 250px;
+    background: #0ea5e9;
+    bottom: -50px;
+    right: -50px;
+    animation-delay: -4s;
+}
+
+/* Main Container (Glassmorphism) */
+.container {
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: none;
+    border-radius: 0;
+    padding: 24px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    z-index: 2;
+}
+
+/* Header */
+header {
+    margin-bottom: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    background: var(--primary-gradient);
+    padding: 2px; /* For border effect */
+    margin-bottom: 16px;
+    box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4);
+    animation: float 6s ease-in-out infinite;
+}
+
+.app-icon {
+    width: 100%;
+    height: 100%;
+    border-radius: 18px;
+    object-fit: cover;
+    background: var(--bg-dark);
+}
+
+h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: -0.02em;
+    background: linear-gradient(to right, #fff, #cbd5e1);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+/* Form Styles */
+.tab-content {
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+}
+.tab-content.active {
+    display: flex;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #e2e8f0;
+    padding-left: 2px;
+}
+
+.helper-text {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding-left: 2px;
+    margin-top: -2px;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 12px;
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+    transition: color 0.3s ease;
+}
+
+input, select {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--border-radius-md);
+    padding: 8px 12px 8px 36px;
+    font-size: 0.9rem;
+    color: white;
+    font-family: inherit;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+select {
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
+    padding-right: 30px;
+}
+
+select option {
+    background-color: var(--bg-dark);
+    color: white;
+}
+
+input::placeholder {
+    color: #64748b;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: rgba(56, 189, 248, 0.8);
+    box-shadow: 0 0 0 4px var(--input-focus);
+    background: rgba(15, 23, 42, 0.8);
+}
+
+input:focus + .input-icon, select:focus + .input-icon {
+    color: #38bdf8;
+}
+
+textarea {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--border-radius-md);
+    padding: 12px;
+    font-size: 0.85rem;
+    color: white;
+    font-family: inherit;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    resize: vertical;
+}
+
+textarea::placeholder {
+    color: #64748b;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: rgba(56, 189, 248, 0.8);
+    box-shadow: 0 0 0 4px var(--input-focus);
+    background: rgba(15, 23, 42, 0.8);
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+.tab-btn {
+    flex: 1;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-muted);
+    padding: 8px;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+.tab-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+.tab-btn.active {
+    background: var(--primary-gradient);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+}
+
+/* Button */
+.primary-btn {
+    width: 100%;
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: var(--border-radius-md);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    margin-top: 8px;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+}
+
+.primary-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.5);
+    background: var(--primary-hover);
+}
+
+.primary-btn:hover::before {
+    left: 100%;
+}
+
+.primary-btn:active {
+    transform: translateY(1px);
+}
+
+.primary-btn:disabled {
+    background: #334155;
+    color: #64748b;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Status Message */
+.status-message {
+    margin-top: 16px;
+    font-size: 0.85rem;
+    text-align: center;
+    min-height: 20px;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: slideUp 0.4s forwards;
+}
+
+.status-message.error {
+    color: var(--error);
+}
+
+.status-message.success {
+    color: var(--success);
+}
+
+.status-message:not(:empty) {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Loader */
+.loader {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.8s linear infinite;
+    position: absolute;
+}
+
+.hidden {
+    display: none;
+}
+
+.btn-loading .btn-text,
+.btn-loading .btn-icon {
+    opacity: 0;
+}
+.btn-loading .loader {
+    display: block;
+}
+
+/* Animations */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 0.5; }
+    100% { transform: scale(1.1); opacity: 0.8; }
+}
+
+@keyframes slideUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
