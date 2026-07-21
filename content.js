@@ -11,7 +11,8 @@ function initSidebar() {
     container.style.position = 'fixed';
     container.style.top = '0';
     container.style.right = '0';
-    container.style.width = '380px';
+    container.style.width = '100%';
+    container.style.maxWidth = '380px';
     container.style.height = '100vh';
     container.style.zIndex = '2147483647'; // Max z-index to stay on top
     container.style.boxShadow = '-5px 0 25px rgba(0,0,0,0.5)';

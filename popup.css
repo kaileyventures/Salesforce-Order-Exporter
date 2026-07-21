@@ -36,11 +36,28 @@ body {
 .app-background {
     position: relative;
     width: 100%;
-    /* Let the content dictate the height, do not use 100vh */
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     z-index: 1;
-    overflow: hidden; /* This is crucial: it stops the glowing orbs from causing scrollbars! */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.3);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .glow-orb {
@@ -78,6 +95,8 @@ body {
     border-radius: 0;
     padding: 24px;
     width: 100%;
+    min-height: 100vh;
+    flex: 1;
     display: flex;
     flex-direction: column;
     z-index: 2;
