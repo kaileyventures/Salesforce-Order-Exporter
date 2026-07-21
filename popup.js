@@ -244,45 +244,71 @@ document.addEventListener('DOMContentLoaded', () => {
     function jsonToCsv(records) {
         if (!records || !records.length) return '';
         
-        const flattenObject = (obj, prefix = '') => {
-            let flattened = {};
-            for (let key in obj) {
-                if (key === 'attributes') continue; 
-                
-                if (typeof obj[key] === 'object' && obj[key] !== null) {
-                    Object.assign(flattened, flattenObject(obj[key], `${prefix}${key}.`));
-                } else {
-                    flattened[`${prefix}${key}`] = obj[key];
-                }
+        // Define mapping of Salesforce field path to clean header name
+        const columns = [
+            { path: 'Id', header: 'Id' },
+            { path: 'Name', header: 'Product Name' },
+            { path: 'CISC__OrderId__r.Name', header: 'Order ID' },
+            { path: 'CISC__OrderId__r.CISC__AccountId__r.Name', header: 'Account Name' },
+            { path: 'CISC__OrderId__r.Patient_Phone__c', header: 'Phone Number' },
+            { path: 'CISC__OrderId__r.Alt_Phone_Shin__c', header: 'Alternative Number' },
+            { path: 'CISC__OrderId__r.CISC__Type__c', header: 'Order Type' },
+            { path: 'CISC__OrderId__r.Order_Team_Status__c', header: 'Order Team' },
+            { path: 'CISC__OrderId__r.CISC__Status__c', header: 'Status' },
+            { path: 'CISC__OrderId__r.CISC__EffectiveDate__c', header: 'Order Date' },
+            { path: 'CISC__OrderId__r.Payment_Mode__c', header: 'Payment Mode' },
+            { path: 'CISC__OrderId__r.CISC__TotalAmount__c', header: 'Total Amount' },
+            { path: 'CISC__OrderId__r.Paid_Amount__c', header: 'Paid Amount' },
+            { path: 'CISC__OrderId__r.Shipping_Charge__c', header: 'Shipping Charges' },
+            { path: 'CISC__OrderId__r.Discount__c', header: 'Discount' },
+            { path: 'CISC__OrderId__r.Total_Amount__c', header: 'Final Amount' },
+            { path: 'CISC__OrderId__r.Balance_Amount__c', header: 'Pending Amount' },
+            { path: 'CISC__OrderId__r.Street_1__c', header: 'Address 1' },
+            { path: 'CISC__OrderId__r.Street_2__c', header: 'Address 2' },
+            { path: 'CISC__OrderId__r.Landmark__c', header: 'Landmark' },
+            { path: 'CISC__OrderId__r.PickLis__c', header: 'State' },
+            { path: 'CISC__OrderId__r.City_District__c', header: 'District' },
+            { path: 'CISC__OrderId__r.Zip_Code__c', header: 'Pin Code' },
+            { path: 'CISC__OrderId__r.Country__c', header: 'Country' },
+            { path: 'CISC__OrderId__r.Shopify_Order_Id__c', header: 'Shopify Order ID' },
+            { path: 'CISC__OrderId__r.Owner.FirstName', header: 'Emp Name' },
+            { path: 'CISC__OrderId__r.Owner.LastName', header: 'Emp ID' },
+            { path: 'CISC__Quantity__c', header: 'Quantity' },
+            { path: 'CISC__ListPrice__c', header: 'List Price' },
+            { path: 'CISC__UnitPrice__c', header: 'Unit Price' },
+            { path: 'CISC__TotalPrice__c', header: 'Total Price' },
+            { path: 'CISC__ProductId__c', header: 'Product ID' },
+            { path: 'CISC__ProductId__r.Name', header: 'Product Name' }
+        ];
+
+        // Helper to retrieve nested object value by dot-notation path
+        const getValueByPath = (obj, path) => {
+            const parts = path.split('.');
+            let current = obj;
+            for (const part of parts) {
+                if (current === null || current === undefined) return '';
+                current = current[part];
             }
-            return flattened;
+            return current === null || current === undefined ? '' : current;
         };
 
-        const flatRecords = records.map(record => flattenObject(record));
-        
-        const headersSet = new Set();
-        flatRecords.forEach(record => {
-            Object.keys(record).forEach(key => headersSet.add(key));
-        });
-        
-        const headers = Array.from(headersSet);
         const csvRows = [];
         
-        csvRows.push(headers.map(header => `"${header.replace(/"/g, '""')}"`).join(','));
+        // Generate Header Row
+        csvRows.push(columns.map(col => `"${col.header.replace(/"/g, '""')}"`).join(','));
         
-        for (const record of flatRecords) {
-            const row = headers.map(header => {
-                let val = record[header];
-                if (val === null || val === undefined) {
-                    return '""';
-                }
-                val = String(val).replace(/"/g, '""'); 
+        // Generate Data Rows
+        for (const record of records) {
+            const row = columns.map(col => {
+                let val = getValueByPath(record, col.path);
+                val = String(val).replace(/"/g, '""');
                 return `"${val}"`;
             });
             csvRows.push(row.join(','));
         }
         
-        return csvRows.join('\n');
+        // Return CSV with UTF-8 BOM to ensure proper formatting when opened in Microsoft Excel
+        return '\ufeff' + csvRows.join('\n');
     }
 
     function downloadCsv(csvContent, filename) {
