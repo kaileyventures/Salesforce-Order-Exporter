@@ -281,6 +281,25 @@ document.addEventListener('DOMContentLoaded', () => {
             { path: 'CISC__ProductId__r.Name', header: 'Product Name' }
         ];
 
+        // Helper to clean phone numbers (keep 10 digits if Indian number, else keep as is)
+        const cleanPhone = (phoneVal) => {
+            if (!phoneVal) return '';
+            let str = String(phoneVal).trim();
+            // Remove all spaces, dashes, brackets, etc.
+            let digitsOnly = str.replace(/\D/g, '');
+            
+            // Check if Indian number (+91..., 91..., 0..., or 10 digits)
+            if (
+                str.startsWith('+91') || 
+                (digitsOnly.length === 12 && digitsOnly.startsWith('91')) ||
+                (digitsOnly.length === 11 && digitsOnly.startsWith('0')) ||
+                digitsOnly.length === 10
+            ) {
+                return digitsOnly.slice(-10);
+            }
+            return str;
+        };
+
         // Helper to retrieve nested object value by dot-notation path
         const getValueByPath = (obj, path) => {
             const parts = path.split('.');
@@ -289,7 +308,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (current === null || current === undefined) return '';
                 current = current[part];
             }
-            return current === null || current === undefined ? '' : current;
+            if (current === null || current === undefined) return '';
+            
+            // Trim and normalize multiple spaces
+            return String(current).trim().replace(/\s+/g, ' ');
         };
 
         const csvRows = [];
@@ -301,7 +323,13 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const record of records) {
             const row = columns.map(col => {
                 let val = getValueByPath(record, col.path);
-                val = String(val).replace(/"/g, '""');
+                
+                // Format phone numbers
+                if (col.header === 'Phone Number' || col.header === 'Alternative Number') {
+                    val = cleanPhone(val);
+                }
+                
+                val = val.replace(/"/g, '""');
                 return `"${val}"`;
             });
             csvRows.push(row.join(','));
