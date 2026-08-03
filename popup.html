@@ -109,12 +109,55 @@
 
             <main id="courierTab" class="tab-content">
                 <div class="form-group">
-                    <label for="bulkCourierData">Courier Data (Tab-separated)</label>
-                    <div class="helper-text" style="margin-bottom: 6px;">Paste from Excel. Columns must include an 'Order ID' or 'Record ID' column. Other valid columns: 'AWB Number', 'Courier Partner', 'Courier Team Remarks', 'Tracking Link'.</div>
-                    <textarea id="bulkCourierData" placeholder="Order ID&#9;AWB Number&#9;Courier Partner&#10;ARO-14445&#9;12345&#9;Delhivery" rows="4"></textarea>
+                    <label>Upload File (CSV / XLSX)</label>
+                    <div id="courierDropzone" class="dropzone">
+                        <input type="file" id="courierFileInput" accept=".csv, .xlsx, .xls" style="display: none;" />
+                        <div class="dropzone-content">
+                            <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                            <span class="dropzone-title">Click to upload or drag & drop</span>
+                            <span class="dropzone-subtitle">CSV, XLSX or XLS files</span>
+                        </div>
+                    </div>
                 </div>
+
+                <div id="filePreviewCard" class="file-preview-card hidden">
+                    <div class="file-preview-header">
+                        <span id="fileNameDisplay" class="file-name">file.xlsx</span>
+                        <button id="removeFileBtn" class="remove-file-btn" title="Remove file">&times;</button>
+                    </div>
+                    <div id="fileSummaryDisplay" class="file-summary">Loaded 0 records</div>
+                    <div id="fileColumnsDisplay" class="file-columns">Columns: -</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="courierTargetStatus">New Status (Optional)</label>
+                    <div class="input-wrapper">
+                        <select id="courierTargetStatus">
+                            <option value="">-- Keep Status (or use sheet column) --</option>
+                            <option value="Courier In Progress">Courier In Progress</option>
+                            <option value="Address Verification Pending">Address Verification Pending</option>
+                            <option value="Address Confirmed">Address Confirmed</option>
+                            <option value="Shipping Label Generated">Shipping Label Generated</option>
+                            <option value="Pending Courier Partner">Pending Courier Partner</option>
+                            <option value="Confirmed Courier Partner">Confirmed Courier Partner</option>
+                            <option value="Dispatched">Dispatched</option>
+                            <option value="In Transit">In Transit</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Delivery Failed">Delivery Failed</option>
+                            <option value="Re-Delivery Initiated">Re-Delivery Initiated</option>
+                        </select>
+                    </div>
+                </div>
+
+                <details class="paste-details">
+                    <summary class="paste-summary">Or paste text from Excel</summary>
+                    <div class="form-group" style="margin-top: 8px;">
+                        <textarea id="bulkCourierData" placeholder="Order ID&#9;AWB Number&#9;Courier Partner&#9;Courier Partner Link&#9;Courier Team Remarks&#10;ARO-14445&#9;12345&#9;Delhivery&#9;https://...&#9;Shipped" rows="3"></textarea>
+                    </div>
+                </details>
+
                 <button id="bulkUpdateCourierBtn" class="primary-btn">
-                    <span class="btn-text">Update Courier Info</span>
+                    <span class="btn-text">Update Courier Info & Status</span>
                     <div class="loader hidden" id="courierLoader"></div>
                 </button>
             </main>
@@ -122,6 +165,7 @@
             <div id="statusMsg" class="status-message"></div>
         </div>
     </div>
+    <script src="xlsx.full.min.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>

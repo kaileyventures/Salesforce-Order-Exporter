@@ -379,73 +379,221 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Bulk Courier Update Logic ---
+    // --- File Dropzone & Parsing Logic ---
+    const dropzone = document.getElementById('courierDropzone');
+    const fileInput = document.getElementById('courierFileInput');
+    const filePreviewCard = document.getElementById('filePreviewCard');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    const fileSummaryDisplay = document.getElementById('fileSummaryDisplay');
+    const fileColumnsDisplay = document.getElementById('fileColumnsDisplay');
+    const removeFileBtn = document.getElementById('removeFileBtn');
+
+    let currentParsedFile = null; // { filename, headers, rows }
+
+    if (dropzone && fileInput) {
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleCourierFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                handleCourierFileSelect(e.target.files[0]);
+            }
+        });
+    }
+
+    if (removeFileBtn) {
+        removeFileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            resetCourierFile();
+        });
+    }
+
+    function resetCourierFile() {
+        currentParsedFile = null;
+        if (fileInput) fileInput.value = '';
+        if (filePreviewCard) filePreviewCard.classList.add('hidden');
+    }
+
+    function handleCourierFileSelect(file) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!['csv', 'xlsx', 'xls'].includes(ext)) {
+            showStatus('Please upload a .csv, .xlsx, or .xls file.', 'error');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Convert to 2D array of strings to get raw row data
+                const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+                
+                if (!rawRows || rawRows.length < 2) {
+                    showStatus('File appears to be empty or missing header row.', 'error');
+                    return;
+                }
+
+                const headers = rawRows[0].map(h => String(h).trim());
+                const dataRows = rawRows.slice(1).filter(r => r && r.some(cell => String(cell).trim() !== ''));
+
+                currentParsedFile = {
+                    filename: file.name,
+                    headers: headers,
+                    rows: dataRows
+                };
+
+                if (fileNameDisplay) fileNameDisplay.textContent = file.name;
+                if (fileSummaryDisplay) fileSummaryDisplay.textContent = `Loaded ${dataRows.length} record(s)`;
+                if (fileColumnsDisplay) fileColumnsDisplay.textContent = `Columns: ${headers.filter(h => h).join(', ')}`;
+                if (filePreviewCard) filePreviewCard.classList.remove('hidden');
+                showStatus('', '');
+            } catch (err) {
+                console.error('File parsing error:', err);
+                showStatus(`Failed to parse file: ${err.message}`, 'error');
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // Smart Column Field Mapping Rules
+    const fieldMappingRules = [
+        { sfField: 'AWB_Number__c', keys: ['awb number', 'awb', 'awb no', 'awb_number__c', 'awb code', 'awb_number'] },
+        { sfField: 'Courier_Partner__c', keys: ['courier partner', 'courier_partner__c', 'courier', 'courier company', 'carrier', 'courier_partner'] },
+        { sfField: 'Courier_Partner_Link__c', keys: ['courier partner link', 'tracking link', 'courier link', 'link', 'tracking url', 'courier_partner_link__c', 'courier_partner_link'] },
+        { sfField: 'Courier_Team_Remarks__c', keys: ['courier team remark', 'courier team remarks', 'courier_team_remarks__c', 'courier remark', 'courier remarks', 'remarks', 'remark', 'courier_team_remarks'] },
+        { sfField: 'CISC__Status__c', keys: ['status', 'order status', 'cisc__status__c', 'new status'] }
+    ];
+
+    function findIdColumnIndex(headers) {
+        const cleanHeaders = headers.map(h => String(h).toLowerCase().trim());
+        
+        // Priority 1: Explicit Order ID / Order Name / Order Number indicators (e.g. ARO-14880)
+        let idx = cleanHeaders.findIndex(h => h === 'order id' || h === 'order_id' || h === 'order name' || h === 'order' || h === 'order_number');
+        if (idx !== -1) return idx;
+
+        // Priority 2: Specific Salesforce Record ID indicators
+        idx = cleanHeaders.findIndex(h => h === 'record id' || h === 'record_id' || h === 'order record id' || h === 'sf id' || h === 'salesforce id');
+        if (idx !== -1) return idx;
+
+        // Priority 3: Generic ID / Name
+        idx = cleanHeaders.findIndex(h => h === 'id' || h === 'name');
+        if (idx !== -1) return idx;
+
+        // Priority 4: Any header containing 'id'
+        idx = cleanHeaders.findIndex(h => h.includes('id'));
+        return idx;
+    }
+
+    // --- Bulk Courier & Status Update Logic ---
     const bulkUpdateCourierBtn = document.getElementById('bulkUpdateCourierBtn');
     bulkUpdateCourierBtn.addEventListener('click', async () => {
-        const courierDataRaw = document.getElementById('bulkCourierData').value.trim();
-        if (!courierDataRaw) {
-            showStatus('Please provide tab-separated courier data.', 'error');
-            return;
+        let headers = [];
+        let dataRows = [];
+        const dropdownTargetStatus = document.getElementById('courierTargetStatus').value.trim();
+
+        if (currentParsedFile) {
+            headers = currentParsedFile.headers;
+            dataRows = currentParsedFile.rows;
+        } else {
+            const courierDataRaw = document.getElementById('bulkCourierData').value.trim();
+            if (!courierDataRaw) {
+                showStatus('Please upload a file (.csv / .xlsx) or paste tab-separated data.', 'error');
+                return;
+            }
+
+            const rows = courierDataRaw.split('\n').map(r => r.split('\t').map(c => c.trim()));
+            if (rows.length < 2) {
+                showStatus('Invalid text format. Ensure there is a header row and at least one data row.', 'error');
+                return;
+            }
+
+            headers = rows[0];
+            dataRows = rows.slice(1);
         }
 
-        const rows = courierDataRaw.split('\n').map(r => r.split('\t').map(c => c.trim()));
-        if (rows.length < 2) {
-            showStatus('Invalid data format. Ensure there is a header row and at least one data row.', 'error');
-            return;
-        }
-
-        const headers = rows[0].map(h => h.toLowerCase());
-        const recordIdIdx = headers.findIndex(h => h.includes('record id') || h === 'id' || h.includes('order id'));
-        
+        const recordIdIdx = findIdColumnIndex(headers);
         if (recordIdIdx === -1) {
-            showStatus('Could not find "Record ID" column in headers.', 'error');
+            showStatus('Could not find an "Order ID" or "Id" column in headers.', 'error');
             return;
         }
 
-        // Field mapping based on likely column names
-        const fieldMap = {
-            'awb number': 'AWB_Number__c',
-            'courier partner': 'Courier_Partner__c',
-            'courier team remarks': 'Courier_Team_Remarks__c',
-            'tracking link': 'Courier_Partner_Link__c',
-            'courier partner link': 'Courier_Partner_Link__c'
-        };
-
-        const dataRows = rows.slice(1).filter(r => r[recordIdIdx]); // Only rows with an ID
+        // Filter valid data rows containing an ID
+        const validRows = dataRows.filter(r => r[recordIdIdx] && String(r[recordIdIdx]).trim().length > 0);
+        if (validRows.length === 0) {
+            showStatus('No valid data rows found in input.', 'error');
+            return;
+        }
 
         setLoading(bulkUpdateCourierBtn, true);
-        showStatus(`Processing ${dataRows.length} records...`, '');
+        showStatus(`Processing ${validRows.length} records...`, '');
 
         try {
             const { sessionId, serverUrl } = await getSalesforceSession();
-            let recordsToUpdate = [];
             
-            // First pass to see if we have 18/15 char IDs or Names
-            let idOrNames = dataRows.map(r => r[recordIdIdx]);
-            
-            // Map row data to SF fields
+            let idOrNames = [];
             let updatesByInput = {};
-            for (const row of dataRows) {
-                let idInput = row[recordIdIdx];
-                let sfRecord = { attributes: { type: 'CISC__Order__c' } };
+
+            for (const row of validRows) {
+                const idInput = String(row[recordIdIdx]).trim();
+                idOrNames.push(idInput);
+
+                const sfRecord = { attributes: { type: 'CISC__Order__c' } };
                 
+                // If user selected a global status from dropdown, apply it
+                if (dropdownTargetStatus) {
+                    sfRecord['CISC__Status__c'] = dropdownTargetStatus;
+                }
+
+                // Map row columns to Salesforce fields
                 headers.forEach((h, idx) => {
                     if (idx === recordIdIdx) return;
-                    // Find matching SF field
-                    for (const [colName, sfField] of Object.entries(fieldMap)) {
-                        if (h.includes(colName)) {
-                            if (row[idx]) sfRecord[sfField] = row[idx];
+                    const cleanH = String(h).toLowerCase().trim();
+                    const val = row[idx] !== undefined ? String(row[idx]).trim() : '';
+
+                    for (const rule of fieldMappingRules) {
+                        if (rule.keys.includes(cleanH) || rule.keys.some(k => cleanH.includes(k))) {
+                            // Row's status field will apply if non-empty (unless dropdown was selected)
+                            if (val) {
+                                if (rule.sfField === 'CISC__Status__c' && dropdownTargetStatus) {
+                                    // Dropdown takes precedence if selected
+                                } else {
+                                    sfRecord[rule.sfField] = val;
+                                }
+                            }
+                            break;
                         }
                     }
                 });
+
                 updatesByInput[idInput] = sfRecord;
             }
 
-            recordsToUpdate = await resolveRecordIds(idOrNames, null, updatesByInput, sessionId, serverUrl);
+            const recordsToUpdate = await resolveRecordIds(idOrNames, null, updatesByInput, sessionId, serverUrl);
             await performBulkUpdate(recordsToUpdate, sessionId, serverUrl);
-            showStatus(`Successfully updated ${recordsToUpdate.length} courier records!`, 'success');
+            showStatus(`Successfully updated ${recordsToUpdate.length} record(s)!`, 'success');
 
         } catch (err) {
+            console.error(err);
             showStatus(err.message, 'error');
         } finally {
             setLoading(bulkUpdateCourierBtn, false);
@@ -453,7 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function resolveRecordIds(inputs, targetStatus, extraFieldsMap, sessionId, serverUrl) {
-        let isIdPattern = /^[a-zA-Z0-9]{15}|[a-zA-Z0-9]{18}$/;
+        let isIdPattern = /^(?:[a-zA-Z0-9]{15}|[a-zA-Z0-9]{18})$/;
         let ids = [];
         let names = [];
         
@@ -552,7 +700,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const errors = results.filter(r => !r.success);
             if (errors.length > 0) {
                 console.error('Update errors:', errors);
-                throw new Error(`Update partially failed. ${errors.length} records had errors. Check console.`);
+                const firstErr = (errors[0].errors && errors[0].errors[0] && errors[0].errors[0].message) 
+                    ? errors[0].errors[0].message 
+                    : (errors[0].statusCode || 'Unknown error');
+                throw new Error(`Update failed for ${errors.length} record(s): ${firstErr}`);
             }
         }
     }

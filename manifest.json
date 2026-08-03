@@ -45,7 +45,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["popup.html", "popup.css", "popup.js", "icon.png"],
+      "resources": ["popup.html", "popup.css", "popup.js", "xlsx.full.min.js", "icon.png"],
       "matches": [
         "*://*.salesforce.com/*",
         "*://*.force.com/*",
