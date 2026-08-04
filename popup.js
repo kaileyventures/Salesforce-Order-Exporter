@@ -464,7 +464,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (fileNameDisplay) fileNameDisplay.textContent = file.name;
                 if (fileSummaryDisplay) fileSummaryDisplay.textContent = `Loaded ${dataRows.length} record(s)`;
-                if (fileColumnsDisplay) fileColumnsDisplay.textContent = `Columns: ${headers.filter(h => h).join(', ')}`;
+                if (fileColumnsDisplay) {
+                    const mappedSummary = headers.filter(h => h).map(h => {
+                        const field = matchHeaderToSfField(h);
+                        return field ? `${h} (${field})` : h;
+                    }).join(', ');
+                    fileColumnsDisplay.textContent = `Columns: ${mappedSummary}`;
+                }
                 if (filePreviewCard) filePreviewCard.classList.remove('hidden');
                 showStatus('', '');
             } catch (err) {
@@ -476,13 +482,64 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Smart Column Field Mapping Rules
-    const fieldMappingRules = [
-        { sfField: 'AWB_Number__c', keys: ['awb number', 'awb', 'awb no', 'awb_number__c', 'awb code', 'awb_number'] },
-        { sfField: 'Courier_Partner__c', keys: ['courier partner', 'courier_partner__c', 'courier', 'courier company', 'carrier', 'courier_partner'] },
-        { sfField: 'Courier_Partner_Link__c', keys: ['courier partner link', 'tracking link', 'courier link', 'link', 'tracking url', 'courier_partner_link__c', 'courier_partner_link'] },
-        { sfField: 'Courier_Team_Remarks__c', keys: ['courier team remark', 'courier team remarks', 'courier_team_remarks__c', 'courier remark', 'courier remarks', 'remarks', 'remark', 'courier_team_remarks'] },
-        { sfField: 'CISC__Status__c', keys: ['status', 'order status', 'cisc__status__c', 'new status'] }
-    ];
+    function matchHeaderToSfField(header) {
+        if (!header) return null;
+        const rawLower = String(header).toLowerCase().trim();
+        const cleanSpaced = rawLower.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+
+        // 1. Direct API Name matches
+        if (rawLower === 'awb_number__c') return 'AWB_Number__c';
+        if (rawLower === 'courier_partner__c') return 'Courier_Partner__c';
+        if (rawLower === 'courier_partner_link__c') return 'Courier_Partner_Link__c';
+        if (rawLower === 'courier_team_remarks__c') return 'Courier_Team_Remarks__c';
+        if (rawLower === 'cisc__status__c') return 'CISC__Status__c';
+
+        // 2. Remarks field (Checked BEFORE partner)
+        if (
+            cleanSpaced.includes('remark') ||
+            cleanSpaced.includes('courier team remarks') ||
+            cleanSpaced.includes('courier remarks')
+        ) {
+            return 'Courier_Team_Remarks__c';
+        }
+
+        // 3. Link field (Checked BEFORE partner)
+        if (
+            cleanSpaced.includes('link') ||
+            cleanSpaced.includes('tracking url') ||
+            cleanSpaced.includes('tracking link') ||
+            cleanSpaced.includes('partner link')
+        ) {
+            return 'Courier_Partner_Link__c';
+        }
+
+        // 4. AWB Number field
+        if (
+            cleanSpaced.includes('awb') ||
+            cleanSpaced.includes('tracking number') ||
+            cleanSpaced.includes('tracking no')
+        ) {
+            return 'AWB_Number__c';
+        }
+
+        // 5. Courier Partner field
+        if (
+            cleanSpaced.includes('partner') ||
+            cleanSpaced.includes('courier company') ||
+            cleanSpaced.includes('carrier') ||
+            cleanSpaced === 'courier' ||
+            cleanSpaced === 'courier partner'
+        ) {
+            return 'Courier_Partner__c';
+        }
+
+        // 6. Status field
+        if (cleanSpaced.includes('status')) {
+            return 'CISC__Status__c';
+        }
+
+        return null;
+    }
 
     function findIdColumnIndex(headers) {
         const cleanHeaders = headers.map(h => String(h).toLowerCase().trim());
@@ -567,20 +624,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Map row columns to Salesforce fields
                 headers.forEach((h, idx) => {
                     if (idx === recordIdIdx) return;
-                    const cleanH = String(h).toLowerCase().trim();
                     const val = row[idx] !== undefined ? String(row[idx]).trim() : '';
+                    const sfField = matchHeaderToSfField(h);
 
-                    for (const rule of fieldMappingRules) {
-                        if (rule.keys.includes(cleanH) || rule.keys.some(k => cleanH.includes(k))) {
-                            // Row's status field will apply if non-empty (unless dropdown was selected)
-                            if (val) {
-                                if (rule.sfField === 'CISC__Status__c' && dropdownTargetStatus) {
-                                    // Dropdown takes precedence if selected
-                                } else {
-                                    sfRecord[rule.sfField] = val;
-                                }
-                            }
-                            break;
+                    if (sfField && val) {
+                        if (sfField === 'CISC__Status__c' && dropdownTargetStatus) {
+                            // Dropdown takes precedence if selected
+                        } else {
+                            sfRecord[sfField] = val;
                         }
                     }
                 });
