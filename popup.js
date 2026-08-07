@@ -672,15 +672,30 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // Helper to match extra fields whether key is 15-char ID, 18-char ID, or Name
+        const getExtraFields = (key) => {
+            if (!extraFieldsMap || !key) return null;
+            if (extraFieldsMap[key]) return extraFieldsMap[key];
+            const keyStr = String(key).trim();
+            if (extraFieldsMap[keyStr]) return extraFieldsMap[keyStr];
+            
+            const key15 = keyStr.slice(0, 15);
+            for (let k in extraFieldsMap) {
+                if (k === key15 || k.slice(0, 15) === key15) {
+                    return extraFieldsMap[k];
+                }
+            }
+            return null;
+        };
+
         let resolvedRecords = [];
 
         // Add records that are already direct Order IDs
         for (let id of orderIds) {
             let rec = { attributes: { type: 'CISC__Order__c' }, Id: id };
             if (targetStatus) rec.CISC__Status__c = targetStatus;
-            if (extraFieldsMap && extraFieldsMap[id]) {
-                Object.assign(rec, extraFieldsMap[id]);
-            }
+            let fields = getExtraFields(id);
+            if (fields) Object.assign(rec, fields);
             resolvedRecords.push(rec);
         }
 
@@ -704,9 +719,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (record.CISC__OrderId__c) {
                         let rec = { attributes: { type: 'CISC__Order__c' }, Id: record.CISC__OrderId__c };
                         if (targetStatus) rec.CISC__Status__c = targetStatus;
-                        if (extraFieldsMap && extraFieldsMap[record.Id]) {
-                            Object.assign(rec, extraFieldsMap[record.Id]);
-                        }
+                        let fields = getExtraFields(record.Id) || getExtraFields(record.CISC__OrderId__c);
+                        if (fields) Object.assign(rec, fields);
                         resolvedRecords.push(rec);
                     }
                 }
@@ -715,7 +729,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Query for records that are Names
         if (names.length > 0) {
-            // Chunk querying to avoid URI too long, query 50 at a time
             const chunkSize = 50;
             for (let i = 0; i < names.length; i += chunkSize) {
                 const chunk = names.slice(i, i + chunkSize);
@@ -735,11 +748,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (targetStatus) rec.CISC__Status__c = targetStatus;
                     
                     let originalName = chunk.find(n => n === record.Name || (n.replace(/^0+/, '') === record.Name.replace(/^0+/, '')));
-                    if (extraFieldsMap && originalName && extraFieldsMap[originalName]) {
-                        Object.assign(rec, extraFieldsMap[originalName]);
-                    } else if (extraFieldsMap && extraFieldsMap[record.Name]) {
-                        Object.assign(rec, extraFieldsMap[record.Name]);
-                    }
+                    let fields = getExtraFields(originalName) || getExtraFields(record.Name) || getExtraFields(record.Id);
+                    if (fields) Object.assign(rec, fields);
                     resolvedRecords.push(rec);
                 }
             }
@@ -747,6 +757,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (resolvedRecords.length === 0) {
             throw new Error('No valid records found in Salesforce for the provided inputs.');
+        }
+
+        // Ensure at least one field to update exists on records
+        const recordsWithFields = resolvedRecords.filter(r => {
+            const keys = Object.keys(r).filter(k => k !== 'Id' && k !== 'attributes');
+            return keys.length > 0;
+        });
+
+        if (recordsWithFields.length === 0) {
+            throw new Error('No updated fields detected to send to Salesforce. Please select a New Status or ensure CSV columns (AWB, Courier Partner, etc.) are populated.');
         }
 
         return resolvedRecords;
@@ -785,10 +805,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const results = await response.json();
             const errors = results.filter(r => !r.success);
             if (errors.length > 0) {
-                console.error('Update errors:', errors);
-                const firstErr = (errors[0].errors && errors[0].errors[0] && errors[0].errors[0].message) 
-                    ? errors[0].errors[0].message 
-                    : (errors[0].statusCode || 'Unknown error');
+                console.error('Update errors details:', JSON.stringify(errors, null, 2));
+                const firstErrObj = errors[0].errors && errors[0].errors[0];
+                const firstErr = firstErrObj 
+                    ? `${firstErrObj.statusCode || ''}: ${firstErrObj.message || 'Unknown error'}${firstErrObj.fields && firstErrObj.fields.length ? ` (Fields: ${firstErrObj.fields.join(', ')})` : ''}` 
+                    : 'Unknown error';
                 throw new Error(`Update failed for ${errors.length} record(s): ${firstErr}`);
             }
         }
