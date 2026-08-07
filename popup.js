@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Build the query
             let query = `
                 SELECT 
-                    Id, Name, CISC__OrderId__r.Name, CISC__OrderId__r.CISC__AccountId__r.Name, 
+                    Id, Name, CISC__OrderId__c, CISC__OrderId__r.Name, CISC__OrderId__r.CISC__AccountId__r.Name, 
                     CISC__OrderId__r.Patient_Phone__c, CISC__OrderId__r.Alt_Phone_Shin__c, 
                     CISC__OrderId__r.CISC__Type__c, 
                     CISC__OrderId__r.Order_Team_Status__c, CISC__OrderId__r.CISC__Status__c, 
@@ -246,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Define mapping of Salesforce field path to clean header name
         const columns = [
-            { path: 'Id', header: 'Id' },
+            { path: 'CISC__OrderId__c', header: 'Id' },
             { path: 'Name', header: 'Product Name' },
             { path: 'CISC__OrderId__r.Name', header: 'Order ID' },
             { path: 'CISC__OrderId__r.CISC__AccountId__r.Name', header: 'Account Name' },
@@ -278,7 +278,8 @@ document.addEventListener('DOMContentLoaded', () => {
             { path: 'CISC__UnitPrice__c', header: 'Unit Price' },
             { path: 'CISC__TotalPrice__c', header: 'Total Price' },
             { path: 'CISC__ProductId__c', header: 'Product ID' },
-            { path: 'CISC__ProductId__r.Name', header: 'Product Name' }
+            { path: 'CISC__ProductId__r.Name', header: 'Product Name' },
+            { path: 'Id', header: 'Order Item ID' }
         ];
 
         // Helper to clean phone numbers (keep 10 digits if Indian number, else keep as is)
@@ -653,12 +654,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function resolveRecordIds(inputs, targetStatus, extraFieldsMap, sessionId, serverUrl) {
         let isIdPattern = /^(?:[a-zA-Z0-9]{15}|[a-zA-Z0-9]{18})$/;
-        let ids = [];
+        let orderIds = [];
+        let itemIds = [];
         let names = [];
         
         for (let val of inputs) {
             if (isIdPattern.test(val)) {
-                ids.push(val);
+                if (val.startsWith('a0A')) {
+                    itemIds.push(val);
+                } else {
+                    orderIds.push(val);
+                }
             } else {
                 // If numeric, pad to 8
                 if (/^\d+$/.test(val)) val = val.padStart(8, '0');
@@ -668,14 +674,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let resolvedRecords = [];
 
-        // Add records that are already IDs
-        for (let id of ids) {
+        // Add records that are already direct Order IDs
+        for (let id of orderIds) {
             let rec = { attributes: { type: 'CISC__Order__c' }, Id: id };
             if (targetStatus) rec.CISC__Status__c = targetStatus;
             if (extraFieldsMap && extraFieldsMap[id]) {
                 Object.assign(rec, extraFieldsMap[id]);
             }
             resolvedRecords.push(rec);
+        }
+
+        // Query for Order Item IDs to get their parent Order ID
+        if (itemIds.length > 0) {
+            const chunkSize = 50;
+            for (let i = 0; i < itemIds.length; i += chunkSize) {
+                const chunk = itemIds.slice(i, i + chunkSize);
+                const idList = chunk.map(id => `'${id}'`).join(',');
+                const query = `SELECT Id, CISC__OrderId__c FROM CISC__OrderItem__c WHERE Id IN (${idList})`;
+                const apiUrl = `${serverUrl}/services/data/v59.0/query/?q=${encodeURIComponent(query)}`;
+
+                const response = await fetch(apiUrl, {
+                    headers: { 'Authorization': `Bearer ${sessionId}`, 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) throw new Error('Failed to resolve Order Item IDs from Salesforce.');
+                
+                const data = await response.json();
+                for (const record of data.records) {
+                    if (record.CISC__OrderId__c) {
+                        let rec = { attributes: { type: 'CISC__Order__c' }, Id: record.CISC__OrderId__c };
+                        if (targetStatus) rec.CISC__Status__c = targetStatus;
+                        if (extraFieldsMap && extraFieldsMap[record.Id]) {
+                            Object.assign(rec, extraFieldsMap[record.Id]);
+                        }
+                        resolvedRecords.push(rec);
+                    }
+                }
+            }
         }
 
         // Query for records that are Names
