@@ -316,6 +316,37 @@ document.addEventListener('DOMContentLoaded', () => {
             return String(current).trim().replace(/\s+/g, ' ');
         };
 
+        // Helper to format date and datetime values cleanly for Excel
+        const formatDateValue = (val) => {
+            if (!val) return '';
+            const str = String(val).trim();
+            // ISO DateTime format: 2026-08-07T09:15:23.000+0000
+            if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(str)) {
+                const dateObj = new Date(str);
+                if (!isNaN(dateObj.getTime())) {
+                    const day = String(dateObj.getDate()).padStart(2, '0');
+                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const year = dateObj.getFullYear();
+                    
+                    let hours = dateObj.getHours();
+                    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+                    const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+                    const ampm = hours >= 12 ? 'PM' : 'AM';
+                    hours = hours % 12;
+                    hours = hours ? hours : 12;
+                    const formattedHours = String(hours).padStart(2, '0');
+                    
+                    return `${day}/${month}/${year} ${formattedHours}:${minutes}:${seconds} ${ampm}`;
+                }
+            }
+            // Date-only format: YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+                const [year, month, day] = str.split('-');
+                return `${day}/${month}/${year}`;
+            }
+            return str;
+        };
+
         const csvRows = [];
         
         // Generate Header Row
@@ -330,6 +361,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (col.header === 'Phone Number' || col.header === 'Alternative Number') {
                     val = cleanPhone(val);
                 }
+
+                // Format dates & datetimes
+                val = formatDateValue(val);
                 
                 val = val.replace(/"/g, '""');
                 return `"${val}"`;
