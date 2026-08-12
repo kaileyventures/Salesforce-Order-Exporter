@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     CISC__OrderId__r.Patient_Phone__c, CISC__OrderId__r.Alt_Phone_Shin__c, 
                     CISC__OrderId__r.CISC__Type__c, 
                     CISC__OrderId__r.Order_Team_Status__c, CISC__OrderId__r.CISC__Status__c, 
-                    CISC__OrderId__r.CISC__EffectiveDate__c, CISC__OrderId__r.Payment_Mode__c, 
+                    CISC__OrderId__r.CISC__EffectiveDate__c, CISC__OrderId__r.Upsell_Assigned_Date__c, CISC__OrderId__r.Payment_Mode__c, 
                     CISC__OrderId__r.CISC__TotalAmount__c, CISC__OrderId__r.Paid_Amount__c, 
                     CISC__OrderId__r.Shipping_Charge__c, CISC__OrderId__r.Discount__c, 
                     CISC__OrderId__r.Total_Amount__c, CISC__OrderId__r.Balance_Amount__c, 
@@ -256,6 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
             { path: 'CISC__OrderId__r.Order_Team_Status__c', header: 'Order Team' },
             { path: 'CISC__OrderId__r.CISC__Status__c', header: 'Status' },
             { path: 'CISC__OrderId__r.CISC__EffectiveDate__c', header: 'Order Date' },
+            { path: 'CISC__OrderId__r.Upsell_Assigned_Date__c', header: 'Upsell Assigned Date' },
             { path: 'CISC__OrderId__r.Payment_Mode__c', header: 'Payment Mode' },
             { path: 'CISC__OrderId__r.CISC__TotalAmount__c', header: 'Total Amount' },
             { path: 'CISC__OrderId__r.Paid_Amount__c', header: 'Paid Amount' },
@@ -494,6 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (rawLower === 'courier_partner_link__c') return 'Courier_Partner_Link__c';
         if (rawLower === 'courier_team_remarks__c') return 'Courier_Team_Remarks__c';
         if (rawLower === 'cisc__status__c') return 'CISC__Status__c';
+        if (rawLower === 'upsell_assigned_date__c') return 'Upsell_Assigned_Date__c';
 
         // 2. Remarks field (Checked BEFORE partner)
         if (
