@@ -382,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.downloads.download({
             url: url,
             filename: filename,
-            saveAs: true 
+            saveAs: false 
         });
     }
 
