@@ -132,10 +132,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            showStatus(`Found ${data.records.length} records. Generating CSV...`, '');
+            showStatus(`Found ${data.records.length} records. Generating Excel file...`, '');
             
-            const csvContent = jsonToCsv(data.records);
-            downloadCsv(csvContent, `Orders_After_${lastOrderId}_${orderStatus.replace(/\s+/g, '_')}.csv`);
+            generateAndDownloadXlsx(data.records, `Orders_After_${lastOrderId}_${orderStatus.replace(/\s+/g, '_')}.xlsx`);
 
             // Find highest order ID to save for next time
             let maxOrderIdStr = lastOrderId;
@@ -241,8 +240,8 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMsg.className = `status-message ${type}`;
     }
 
-    function jsonToCsv(records) {
-        if (!records || !records.length) return '';
+    function generateAndDownloadXlsx(records, filename) {
+        if (!records || !records.length) return;
         
         // Define mapping of Salesforce field path to clean header name
         const columns = [
@@ -287,10 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const cleanPhone = (phoneVal) => {
             if (!phoneVal) return '';
             let str = String(phoneVal).trim();
-            // Remove all spaces, dashes, brackets, etc.
             let digitsOnly = str.replace(/\D/g, '');
-            
-            // Check if Indian number (+91..., 91..., 0..., or 10 digits)
             if (
                 str.startsWith('+91') || 
                 (digitsOnly.length === 12 && digitsOnly.startsWith('91')) ||
@@ -311,8 +307,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 current = current[part];
             }
             if (current === null || current === undefined) return '';
-            
-            // Trim and normalize multiple spaces
             return String(current).trim().replace(/\s+/g, ' ');
         };
 
@@ -320,7 +314,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const formatDateValue = (val) => {
             if (!val) return '';
             const str = String(val).trim();
-            // ISO DateTime format: 2026-08-07T09:15:23.000+0000
             if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(str)) {
                 const dateObj = new Date(str);
                 if (!isNaN(dateObj.getTime())) {
@@ -339,7 +332,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     return `${day}/${month}/${year} ${formattedHours}:${minutes}:${seconds} ${ampm}`;
                 }
             }
-            // Date-only format: YYYY-MM-DD
             if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
                 const [year, month, day] = str.split('-');
                 return `${day}/${month}/${year}`;
@@ -347,42 +339,105 @@ document.addEventListener('DOMContentLoaded', () => {
             return str;
         };
 
-        const csvRows = [];
-        
-        // Generate Header Row
-        csvRows.push(columns.map(col => `"${col.header.replace(/"/g, '""')}"`).join(','));
-        
-        // Generate Data Rows
+        // Helper to format text in Proper Case (Capitalize Words)
+        const toProperCase = (val) => {
+            if (!val || typeof val !== 'string') return val;
+            const str = val.trim();
+            if (!str) return str;
+            if (/^[A-Z0-9_-]{8,}$/i.test(str) || /^\+?\d[\d\s-]{8,}$/.test(str) || /^\d{2}\/\d{2}\/\d{4}/.test(str)) {
+                return str;
+            }
+            return str.replace(/\b\w+/g, word => {
+                if (/^\d+$/.test(word)) return word;
+                return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            });
+        };
+
+        const headers = columns.map(col => col.header);
+        const aoaData = [headers];
+
         for (const record of records) {
             const row = columns.map(col => {
                 let val = getValueByPath(record, col.path);
-                
-                // Format phone numbers
                 if (col.header === 'Phone Number' || col.header === 'Alternative Number') {
                     val = cleanPhone(val);
+                } else if (col.header === 'Order Date' || col.header === 'Upsell Assigned Date') {
+                    val = formatDateValue(val);
+                } else {
+                    val = formatDateValue(val);
+                    val = toProperCase(val);
                 }
-
-                // Format dates & datetimes
-                val = formatDateValue(val);
-                
-                val = val.replace(/"/g, '""');
-                return `"${val}"`;
+                return val;
             });
-            csvRows.push(row.join(','));
+            aoaData.push(row);
         }
-        
-        // Return CSV with UTF-8 BOM to ensure proper formatting when opened in Microsoft Excel
-        return '\ufeff' + csvRows.join('\n');
-    }
 
-    function downloadCsv(csvContent, filename) {
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        // Create Worksheet
+        const ws = XLSX.utils.aoa_to_sheet(aoaData);
+
+        // Turn on AutoFilter for all columns
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        ws['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
+
+        // Calculate Column Widths (no text wrap)
+        const colWidths = columns.map((col, cIdx) => {
+            let maxLen = col.header.length;
+            for (let rIdx = 1; rIdx < aoaData.length; rIdx++) {
+                const cellVal = String(aoaData[rIdx][cIdx] || '');
+                if (cellVal.length > maxLen) maxLen = cellVal.length;
+            }
+            return { wch: Math.min(Math.max(maxLen + 4, 12), 45) };
+        });
+        ws['!cols'] = colWidths;
+
+        // Apply Styles: Yellow Header (Bold), Center Alignment on ALL cells, No Text Wrap
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                if (!ws[cellRef]) continue;
+
+                if (R === 0) {
+                    // Yellow Header styling (Bold & Center Aligned)
+                    ws[cellRef].s = {
+                        fill: { fgColor: { rgb: "FFFF00" } },
+                        font: { bold: true, color: { rgb: "000000" }, name: "Calibri", sz: 11 },
+                        alignment: { horizontal: "center", vertical: "center", wrapText: false },
+                        border: {
+                            top: { style: "thin", color: { rgb: "D9D9D9" } },
+                            bottom: { style: "thin", color: { rgb: "D9D9D9" } },
+                            left: { style: "thin", color: { rgb: "D9D9D9" } },
+                            right: { style: "thin", color: { rgb: "D9D9D9" } }
+                        }
+                    };
+                } else {
+                    // Data cells center aligned across entire sheet, no wrap
+                    ws[cellRef].s = {
+                        alignment: { horizontal: "center", vertical: "center", wrapText: false },
+                        font: { name: "Calibri", sz: 11 },
+                        border: {
+                            top: { style: "thin", color: { rgb: "E2E8F0" } },
+                            bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+                            left: { style: "thin", color: { rgb: "E2E8F0" } },
+                            right: { style: "thin", color: { rgb: "E2E8F0" } }
+                        }
+                    };
+                }
+            }
+        }
+
+        // Create Workbook & Write true .xlsx binary file with styles
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Orders");
+
+        const targetXlsxFilename = filename.endsWith('.xlsx') ? filename : filename.replace(/\.[^.]+$/, '') + '.xlsx';
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         const url = URL.createObjectURL(blob);
-        
+
         chrome.downloads.download({
             url: url,
-            filename: filename,
-            saveAs: false 
+            filename: targetXlsxFilename,
+            saveAs: false
         });
     }
 
