@@ -394,3 +394,114 @@ textarea:focus {
         transform: translateY(0);
     }
 }
+
+/* File Upload Dropzone */
+.dropzone {
+    border: 2px dashed var(--input-border);
+    border-radius: var(--border-radius-md);
+    background: var(--input-bg);
+    padding: 14px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dropzone:hover, .dropzone.dragover {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.08);
+    box-shadow: 0 0 0 4px var(--input-focus);
+}
+
+.dropzone-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.upload-icon {
+    color: #38bdf8;
+    margin-bottom: 2px;
+}
+
+.dropzone-title {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.dropzone-subtitle {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+/* File Preview Card */
+.file-preview-card {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid var(--input-border);
+    border-radius: var(--border-radius-md);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: slideUp 0.3s ease;
+}
+
+.file-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.file-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #38bdf8;
+    word-break: break-all;
+}
+
+.remove-file-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+    transition: color 0.2s;
+}
+
+.remove-file-btn:hover {
+    color: var(--error);
+}
+
+.file-summary {
+    font-size: 0.8rem;
+    color: var(--success);
+    font-weight: 500;
+}
+
+.file-columns {
+    font-size: 0.73rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+}
+
+/* Details element styling for collapsible paste area */
+.paste-details {
+    margin-top: 4px;
+}
+
+.paste-summary {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+    transition: color 0.2s;
+}
+
+.paste-summary:hover {
+    color: var(--text-main);
+}
+
