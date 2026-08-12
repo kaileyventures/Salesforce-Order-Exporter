@@ -1,72 +1,132 @@
 # Salesforce Order Exporter
 
-A premium, production-grade Chrome Extension designed to seamlessly export orders directly from Salesforce CRM without requiring manual SOQL execution.
+A premium, production-grade Chrome Extension designed to seamlessly export, update, and manage orders directly from Salesforce CRM without requiring manual SOQL execution or Data Loader.
 
 ![App Icon](icon.png)
 
-## Overview
+---
 
-The Salesforce Order Exporter provides a sleek, glassmorphism UI directly inside Chrome. It leverages your active Salesforce login session to dynamically construct and execute a SOQL query against the Salesforce REST API, downloading the results instantly as a clean CSV file.
+## 🌟 Overview
 
-This tool completely bypasses the need for Salesforce Inspector when your sole goal is to export orders based on ID thresholds and Status filters for third-party shipping integrations (like BlueDart, Delhivery, etc.).
+**Salesforce Order Exporter** provides a sleek, glassmorphism sidebar UI directly inside Google Chrome. It leverages your active Salesforce login session to dynamically construct and execute SOQL queries against the Salesforce REST API, exporting formatted **`.xlsx` (Excel)** files with auto-filters, yellow headers, center alignment, and human-readable date formats.
 
-## Features
+This tool completely bypasses the need for Salesforce Inspector or Data Loader when exporting orders or performing bulk status and courier updates for shipping integrations (BlueDart, Delhivery, Expressbees, etc.).
 
-- **Session Intelligence:** Automatically detects and utilizes the correct active Salesforce session (`sid` cookie) regardless of whether you are on a `.lightning.force.com` or `.my.salesforce.com` domain.
-- **Export Orders:** Filters records precisely using `CISC__OrderId__r.Name` (with automatic zero-padding) and `CISC__Status__c`. Instantly parses nested JSON responses from the Salesforce API into a clean local CSV file with formatted Date and DateTime fields (such as `Upsell Assigned Date` in `DD/MM/YYYY hh:mm:ss AM/PM` format and `Order Date` in `DD/MM/YYYY` format).
-- **Bulk Status Update:** Paste up to hundreds of Order IDs (or Record IDs) at once to instantly update their status without needing Data Loader or Inspector.
-- **Bulk Courier Update:** Paste data directly from Excel (including Record ID, AWB Number, Courier Partner, Courier Team Remarks, and Tracking Link) to bulk update courier information on your orders.
-- **Date & DateTime Formatting:** Automatically converts ISO UTC timestamps from Salesforce API into human-readable local Date & DateTime formats for seamless viewing in Microsoft Excel.
-- **Premium UI/UX:** Built with a stunning dark-mode glassmorphism design, SVG iconography, smooth micro-animations, and a tabbed responsive layout.
+---
 
-## Installation
+## 🚀 Core Features
 
-Since this is a custom internal tool, it is installed locally via Developer Mode:
+- **Direct `.xlsx` Excel Export:** Downloads native `.xlsx` files directly to your default browser download folder without annoying file-picker dialogs (`saveAs: false`).
+- **Professional Excel Styling:**
+  - **Yellow Header:** Header row styled with bold black text on a `#FFFF00` yellow background fill and thin borders.
+  - **Center Aligned Data:** Entire sheet (headers + data rows) formatted with center vertical & horizontal alignment (`alignment: { horizontal: "center", vertical: "center" }`).
+  - **No Text Wrap:** `wrapText: false` applied across all cells with automatic column width calculation (`!cols`).
+  - **AutoFilter On:** Native Excel AutoFilters pre-enabled across all 35 export columns (`!autofilter`).
+  - **Proper Case Text:** Converts text values to Capitalized Words while preserving IDs, phone numbers, and codes.
+- **Smart Date & DateTime Formatting:** Converts raw Salesforce ISO UTC timestamps (`2026-08-07T09:15:23.000+0000`) into clean local formats:
+  - **DateTime Fields** (`Upsell Assigned Date`): `DD/MM/YYYY hh:mm:ss AM/PM` (e.g., `07/08/2026 02:45:23 PM`).
+  - **Date Fields** (`Order Date`): `DD/MM/YYYY` (e.g., `07/08/2026`).
+- **Session Intelligence:** Automatically extracts and utilizes the active Salesforce session (`sid` cookie) on both `.lightning.force.com` and `.my.salesforce.com` domains.
+- **Bulk Status Update:** Paste hundreds of Order IDs or Record IDs to perform composite REST API status updates in batches.
+- **Bulk Courier Update:** Upload `.csv` / `.xlsx` files or paste Excel table rows (AWB Number, Courier Partner, Remarks, Tracking Link) for automatic column matching and batch updates.
+- **Modern Glassmorphism UI:** Features animated custom checkbox toggles, styled custom dropdowns, dark mode glass visual aesthetics, smooth micro-interactions, and tabbed navigation.
 
-1. Clone or download this repository to your local machine.
-2. Open Google Chrome and navigate to `chrome://extensions/`.
+---
+
+## 📋 Exported Excel Columns (35 Fields)
+
+| # | Column Header | Salesforce Field Path |
+|---|---|---|
+| 1 | **Id** | `CISC__OrderId__c` |
+| 2 | **Product Name** | `Name` |
+| 3 | **Order ID** | `CISC__OrderId__r.Name` |
+| 4 | **Account Name** | `CISC__OrderId__r.CISC__AccountId__r.Name` |
+| 5 | **Phone Number** | `CISC__OrderId__r.Patient_Phone__c` |
+| 6 | **Alternative Number** | `CISC__OrderId__r.Alt_Phone_Shin__c` |
+| 7 | **Order Type** | `CISC__OrderId__r.CISC__Type__c` |
+| 8 | **Order Team** | `CISC__OrderId__r.Order_Team_Status__c` |
+| 9 | **Status** | `CISC__OrderId__r.CISC__Status__c` |
+| 10 | **Order Date** | `CISC__OrderId__r.CISC__EffectiveDate__c` |
+| 11 | **Upsell Assigned Date** | `CISC__OrderId__r.Upsell_Assigned_Date__c` |
+| 12 | **Payment Mode** | `CISC__OrderId__r.Payment_Mode__c` |
+| 13 | **Total Amount** | `CISC__OrderId__r.CISC__TotalAmount__c` |
+| 14 | **Paid Amount** | `CISC__OrderId__r.Paid_Amount__c` |
+| 15 | **Shipping Charges** | `CISC__OrderId__r.Shipping_Charge__c` |
+| 16 | **Discount** | `CISC__OrderId__r.Discount__c` |
+| 17 | **Final Amount** | `CISC__OrderId__r.Total_Amount__c` |
+| 18 | **Pending Amount** | `CISC__OrderId__r.Balance_Amount__c` |
+| 19 | **Address 1** | `CISC__OrderId__r.Street_1__c` |
+| 20 | **Address 2** | `CISC__OrderId__r.Street_2__c` |
+| 21 | **Landmark** | `CISC__OrderId__r.Landmark__c` |
+| 22 | **State** | `CISC__OrderId__r.PickLis__c` |
+| 23 | **District** | `CISC__OrderId__r.City_District__c` |
+| 24 | **Pin Code** | `CISC__OrderId__r.Zip_Code__c` |
+| 25 | **Country** | `CISC__OrderId__r.Country__c` |
+| 26 | **Shopify Order ID** | `CISC__OrderId__r.Shopify_Order_Id__c` |
+| 27 | **Emp Name** | `CISC__OrderId__r.Owner.FirstName` |
+| 28 | **Emp ID** | `CISC__OrderId__r.Owner.LastName` |
+| 29 | **Quantity** | `CISC__Quantity__c` |
+| 30 | **List Price** | `CISC__ListPrice__c` |
+| 31 | **Unit Price** | `CISC__UnitPrice__c` |
+| 32 | **Total Price** | `CISC__TotalPrice__c` |
+| 33 | **Product ID** | `CISC__ProductId__c` |
+| 34 | **Product Name** | `CISC__ProductId__r.Name` |
+| 35 | **Order Item ID** | `Id` |
+
+---
+
+## 🛠️ Installation
+
+1. Clone or download this repository to your local computer.
+2. Open **Google Chrome** and navigate to `chrome://extensions/`.
 3. Enable **Developer mode** using the toggle switch in the top right corner.
-4. Click the **Load unpacked** button.
-5. Select the directory containing the extension files.
-6. The extension will now appear in your toolbar (pin it for easy access).
+4. Click **Load unpacked** and select the extension directory.
+5. The extension will now appear in your browser extension toolbar.
 
-## Usage
+---
 
-1. Log into your Salesforce instance in a Chrome tab.
-2. Click the **Salesforce Order Exporter** extension icon.
-3. **Export Tab:**
-   - **Last Order ID:** Enter the ID of the last order you exported (e.g., `8950` or `ARO-8950`). 
-   - **Include this order as well:** Check this box to include the entered order ID.
-   - **Target Status:** Select the desired order status from the dropdown.
-   - Click **Extract Orders** to generate and download the CSV.
-4. **Status Tab:**
-   - Paste your Order IDs (or Salesforce Record IDs), one per line, into the textarea.
-   - Select the **New Status** from the dropdown.
-   - Click **Update Statuses** to execute the bulk update.
-5. **Courier Tab:**
-   - Copy a table directly from Excel/Google Sheets. Ensure it has a header row with at least a `Record ID` or `Order ID` column. Other supported columns include `AWB Number`, `Courier Partner`, `Courier Team Remarks`, and `Tracking Link` (or `Courier Partner Link`).
-   - Paste the copied table into the textarea.
-   - Click **Update Courier Info** to execute the bulk update.
+## 📖 Usage Guide
 
-## Technical Stack
+### 1. Export Tab
+- **Last Order ID:** Enter the starting Order ID threshold (e.g., `8950` or `ARO-8950`).
+- **Include this order as well:** Tick the custom checkbox to include the specified ID in the result set.
+- **Target Status:** Select the desired order status filter or leave as `All Statuses`.
+- Click **Extract Orders** to generate and download the styled `.xlsx` file.
 
-- **Manifest V3:** Adheres to the latest Chrome Extension security protocols.
-- **HTML/CSS/JS:** Vanilla web technologies with no heavy framework dependencies.
-- **Salesforce REST API:** Direct data querying (`/services/data/v59.0/query/`) and bulk updating (`/services/data/v59.0/composite/sobjects`).
+### 2. Status Tab
+- Paste Order IDs or Salesforce Record IDs (one per line) into the textarea.
+- Select the **New Status** from the dropdown.
+- Click **Update Statuses** to execute batch composite updates.
 
-## Project Structure
+### 3. Courier Tab
+- Upload a `.csv` or `.xlsx` file via the drag-and-drop dropzone (or paste Excel table rows directly).
+- The extension automatically matches column headers (`AWB Number`, `Courier Partner`, `Courier Team Remarks`, `Tracking Link`, etc.).
+- Select an optional target status and click **Update Courier Info & Status**.
+
+---
+
+## 🏗️ Technical Architecture & Project Structure
 
 ```
-├── manifest.json      # Extension configuration and permissions
-├── popup.html         # User interface structure
-├── popup.css          # Glassmorphism styling and animations
-├── popup.js           # Core API logic and CSV conversion
-├── icon.png           # 1024x1024 High-res app icon
-└── README.md          # This documentation file
+Salesforce-Order-Exporter/
+├── manifest.json        # Manifest V3 extension configuration & permissions
+├── popup.html           # Glassmorphism HTML layout & tabbed container
+├── popup.css            # Dark mode styles, custom controls, & glowing animations
+├── popup.js             # SOQL query execution, XLSX styling, & batch update logic
+├── background.js        # Background service worker & extension state management
+├── content.js           # Content script iframe sidebar injection
+├── xlsx.full.min.js     # Bundled xlsx-js-style library (supports cell formatting)
+├── icon.png             # Extension app icon
+└── README.md            # Comprehensive project documentation
 ```
 
-## Permissions Justification
+### Permissions
+- `activeTab`: Validates active Salesforce tab domain URLs.
+- `cookies`: Authenticates session credentials via `sid` cookies for REST API calls.
+- `downloads`: Directly saves exported `.xlsx` files.
 
-- `activeTab`: Required to determine the current Salesforce domain URL and ensure the user is on a valid Salesforce page.
-- `cookies`: Required to securely extract the active `sid` (Session ID) cookie to authenticate the REST API calls.
-- `downloads`: Required to generate and save the resulting CSV file to the user's local filesystem.
+---
+
+## 📄 License
+
+Internal Tool — Developed for Salesforce CRM Order Operations.
