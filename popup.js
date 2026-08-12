@@ -314,7 +314,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const formatDateValue = (val) => {
             if (!val) return '';
             const str = String(val).trim();
-            if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(str)) {
+            // ISO DateTime format: 2026-08-07T09:15:23.000+0000 or 2026-08-07 09:15:23
+            if (/^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}/.test(str)) {
                 const dateObj = new Date(str);
                 if (!isNaN(dateObj.getTime())) {
                     const day = String(dateObj.getDate()).padStart(2, '0');
@@ -332,6 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return `${day}/${month}/${year} ${formattedHours}:${minutes}:${seconds} ${ampm}`;
                 }
             }
+            // Date-only format: YYYY-MM-DD
             if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
                 const [year, month, day] = str.split('-');
                 return `${day}/${month}/${year}`;
@@ -344,11 +346,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!val || typeof val !== 'string') return val;
             const str = val.trim();
             if (!str) return str;
+            // Preserve explicit codes, IDs, phone numbers, or dates (e.g. DD/MM/YYYY...)
             if (/^[A-Z0-9_-]{8,}$/i.test(str) || /^\+?\d[\d\s-]{8,}$/.test(str) || /^\d{2}\/\d{2}\/\d{4}/.test(str)) {
                 return str;
             }
-            return str.replace(/\b\w+/g, word => {
-                if (/^\d+$/.test(word)) return word;
+            return str.replace(/\b[a-zA-Z]+/g, word => {
+                if (word.toUpperCase() === 'AM' || word.toUpperCase() === 'PM') return word.toUpperCase();
                 return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
             });
         };
