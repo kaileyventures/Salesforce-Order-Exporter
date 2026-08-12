@@ -42,9 +42,14 @@
                         <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M3 15h6"/><path d="M3 18h6"/><path d="M3 12h6"/></svg>
                         <input type="text" id="lastOrderId" placeholder="e.g. 8950 or ARO-8950" autocomplete="off" />
                     </div>
-                    <div class="checkbox-wrapper" style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" id="includeLastOrder" />
-                        <label for="includeLastOrder" style="margin-bottom: 0; font-size: 0.9rem; font-weight: normal; color: var(--text-secondary); cursor: pointer;">Include this order as well</label>
+                    <div class="checkbox-wrapper">
+                        <label class="custom-checkbox-container">
+                            <input type="checkbox" id="includeLastOrder" />
+                            <span class="custom-checkbox">
+                                <svg class="checkmark-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </span>
+                            <span class="checkbox-text">Include this order as well</span>
+                        </label>
                     </div>
                     <div class="helper-text" id="helperText">Example: Last exported order was ARO-8950</div>
                 </div>
