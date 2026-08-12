@@ -13,9 +13,10 @@ This tool completely bypasses the need for Salesforce Inspector when your sole g
 ## Features
 
 - **Session Intelligence:** Automatically detects and utilizes the correct active Salesforce session (`sid` cookie) regardless of whether you are on a `.lightning.force.com` or `.my.salesforce.com` domain.
-- **Export Orders:** Filters records precisely using `CISC__OrderId__r.Name` (with automatic zero-padding) and `CISC__Status__c`. Instantly parses nested JSON responses from the Salesforce API into a clean local CSV file.
+- **Export Orders:** Filters records precisely using `CISC__OrderId__r.Name` (with automatic zero-padding) and `CISC__Status__c`. Instantly parses nested JSON responses from the Salesforce API into a clean local CSV file with formatted Date and DateTime fields (such as `Upsell Assigned Date` in `DD/MM/YYYY hh:mm:ss AM/PM` format and `Order Date` in `DD/MM/YYYY` format).
 - **Bulk Status Update:** Paste up to hundreds of Order IDs (or Record IDs) at once to instantly update their status without needing Data Loader or Inspector.
 - **Bulk Courier Update:** Paste data directly from Excel (including Record ID, AWB Number, Courier Partner, Courier Team Remarks, and Tracking Link) to bulk update courier information on your orders.
+- **Date & DateTime Formatting:** Automatically converts ISO UTC timestamps from Salesforce API into human-readable local Date & DateTime formats for seamless viewing in Microsoft Excel.
 - **Premium UI/UX:** Built with a stunning dark-mode glassmorphism design, SVG iconography, smooth micro-animations, and a tabbed responsive layout.
 
 ## Installation
