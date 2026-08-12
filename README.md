@@ -33,45 +33,14 @@ This tool completely bypasses the need for Salesforce Inspector or Data Loader w
 
 ---
 
-## 📋 Exported Excel Columns (35 Fields)
+## 📋 Export Data Scope
 
-| # | Column Header | Salesforce Field Path |
-|---|---|---|
-| 1 | **Id** | `CISC__OrderId__c` |
-| 2 | **Product Name** | `Name` |
-| 3 | **Order ID** | `CISC__OrderId__r.Name` |
-| 4 | **Account Name** | `CISC__OrderId__r.CISC__AccountId__r.Name` |
-| 5 | **Phone Number** | `CISC__OrderId__r.Patient_Phone__c` |
-| 6 | **Alternative Number** | `CISC__OrderId__r.Alt_Phone_Shin__c` |
-| 7 | **Order Type** | `CISC__OrderId__r.CISC__Type__c` |
-| 8 | **Order Team** | `CISC__OrderId__r.Order_Team_Status__c` |
-| 9 | **Status** | `CISC__OrderId__r.CISC__Status__c` |
-| 10 | **Order Date** | `CISC__OrderId__r.CISC__EffectiveDate__c` |
-| 11 | **Upsell Assigned Date** | `CISC__OrderId__r.Upsell_Assigned_Date__c` |
-| 12 | **Payment Mode** | `CISC__OrderId__r.Payment_Mode__c` |
-| 13 | **Total Amount** | `CISC__OrderId__r.CISC__TotalAmount__c` |
-| 14 | **Paid Amount** | `CISC__OrderId__r.Paid_Amount__c` |
-| 15 | **Shipping Charges** | `CISC__OrderId__r.Shipping_Charge__c` |
-| 16 | **Discount** | `CISC__OrderId__r.Discount__c` |
-| 17 | **Final Amount** | `CISC__OrderId__r.Total_Amount__c` |
-| 18 | **Pending Amount** | `CISC__OrderId__r.Balance_Amount__c` |
-| 19 | **Address 1** | `CISC__OrderId__r.Street_1__c` |
-| 20 | **Address 2** | `CISC__OrderId__r.Street_2__c` |
-| 21 | **Landmark** | `CISC__OrderId__r.Landmark__c` |
-| 22 | **State** | `CISC__OrderId__r.PickLis__c` |
-| 23 | **District** | `CISC__OrderId__r.City_District__c` |
-| 24 | **Pin Code** | `CISC__OrderId__r.Zip_Code__c` |
-| 25 | **Country** | `CISC__OrderId__r.Country__c` |
-| 26 | **Shopify Order ID** | `CISC__OrderId__r.Shopify_Order_Id__c` |
-| 27 | **Emp Name** | `CISC__OrderId__r.Owner.FirstName` |
-| 28 | **Emp ID** | `CISC__OrderId__r.Owner.LastName` |
-| 29 | **Quantity** | `CISC__Quantity__c` |
-| 30 | **List Price** | `CISC__ListPrice__c` |
-| 31 | **Unit Price** | `CISC__UnitPrice__c` |
-| 32 | **Total Price** | `CISC__TotalPrice__c` |
-| 33 | **Product ID** | `CISC__ProductId__c` |
-| 34 | **Product Name** | `CISC__ProductId__r.Name` |
-| 35 | **Order Item ID** | `Id` |
+The extension automatically queries and extracts **35 essential order & item fields** from Salesforce, including:
+- **Order Identifiers:** Salesforce Record ID, Order ID, Shopify Order ID.
+- **Customer & Contact Details:** Account Name, Phone Number, Alternative Number, Full Shipping Address (Street, District, State, Pin Code).
+- **Dates & Timestamps:** Order Date (`DD/MM/YYYY`) and Upsell Assigned Date (`DD/MM/YYYY hh:mm:ss AM/PM`).
+- **Financial & Payment Info:** Payment Mode, Total Amount, Paid Amount, Balance Amount, Shipping Charges, and Discounts.
+- **Line Items & Product Details:** Product Name, Quantity, Unit Price, List Price, Total Price, and Product ID.
 
 ---
 
